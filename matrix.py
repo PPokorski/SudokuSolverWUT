@@ -63,9 +63,11 @@ class Sudoku:
 		setOfAllColors:set = {x+1 for x in range(self.N)}
 		setOfUncoloredPoints: set = set()
 		for i in range(amountOfPoints):
-			saturationDictionary[i] = self.getSaturation(i)
 			if self.colors[i] == 0:
 				setOfUncoloredPoints.add(i)
+				saturationDictionary[i] = self.getSaturation(i)
+			else:
+				saturationDictionary[i] = {0} #bo pokolorowane punkty nie muszą być sprawdzane na saturację
 		while self.isUncolored():
 			max = 0
 			maxPoint = 0
@@ -91,9 +93,11 @@ class Sudoku:
 		setOfAllColors:set = {x+1 for x in range(self.N)}
 		setOfUncoloredPoints: set = set()
 		for i in range(amountOfPoints):
-			saturationDictionary[i] = self.getSaturation(i)
 			if self.colors[i] == 0:
 				setOfUncoloredPoints.add(i)
+				saturationDictionary[i] = self.getSaturation(i)
+			else:
+				saturationDictionary[i] = {0} #bo pokolorowane punkty nie muszą być sprawdzane na saturację
 		max = 0
 		maxPoint = 0
 		for i in setOfUncoloredPoints:
