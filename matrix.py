@@ -1,18 +1,18 @@
 import math #dla operacji matematycznych
 import random	# dla generowania losowych plansz
-from msvcrt import getch	#dla interface z użytkownikiem
+from msvcrt import getch	#dla interface z użytkownikiem (nieużywane)
 import copy	# dla operacji które wymagają kopiowania struktur
 class Sudoku:
 	def __init__(self,number,colorsList=None):
-		self.n:int = number	#stopien sudoku	Tablica sudoku jest n^n x n^n
-		self.N:int = int(math.pow(self.n,2))
-		self.colors:list
+		self.n = number	#stopien sudoku	Tablica sudoku jest n^n x n^n
+		self.N = int(math.pow(self.n,2))
+		self.colors = []
 		if not isinstance(colorsList,list):
 			self.colors = [0 for x in range(int(self.N*self.N))]
 		else:
 			self.colors = colorsList
-		self.matrix:list = [0 for x in range(int(math.pow(len(self.colors),2)))]
-		amountOfPoints:int = int(len(self.colors))
+		self.matrix = [0 for x in range(int(math.pow(len(self.colors),2)))]
+		amountOfPoints = int(len(self.colors))
 		for a in range(amountOfPoints):
 			for x in range(amountOfPoints):
 				if a!=x:
@@ -20,13 +20,13 @@ class Sudoku:
 						self.matrix[a+x*amountOfPoints] = 1
 					elif ((a//self.N)//self.n)== ((x//self.N)//self.n) and ((a%self.N)//self.n)==((x%self.N)//self.n):
 						self.matrix[a+x*amountOfPoints] = 1
-		self.globalFifoActionList:list = []
-		self.emptyData:list = [-1,[]]
+		self.globalFifoActionList = []
+		self.emptyData = [-1,[]]
 		self.globalData = copy.copy(self.emptyData)
 	def printColors(self):
-		toPrint:str = " "
-		unitWidth:int = 2+self.N//10
-		bar:str = '-'*int(unitWidth*(self.N)+2*(self.n-1)-1)
+		toPrint = " "
+		unitWidth = 2+self.N//10
+		bar = '-'*int(unitWidth*(self.N)+2*(self.n-1)-1)
 		for i in range(int(self.N*self.N)):
 			if i%self.N == 0:
 				toPrint+='\n\t'
@@ -38,8 +38,8 @@ class Sudoku:
 			toPrint+="{0: <{1}}".format(int(self.colors[i]),unitWidth)
 		print(toPrint)	
 	def printMatrixList(self):
-		toPrint:str = " "
-		matrixWidth:int = (self.N*self.N)
+		toPrint = " "
+		matrixWidth = (self.N*self.N)
 		for i in range(int(matrixWidth*matrixWidth)):
 			if i%(matrixWidth) == 0:
 				toPrint+='\n'
@@ -47,13 +47,13 @@ class Sudoku:
 		print(toPrint)	
 	def getSaturation(self,point):
 		neighbourColors = {0}
-		amountOfPoints:int = int(len(self.colors))
+		amountOfPoints = int(len(self.colors))
 		for i in range(amountOfPoints):
 			if self.matrix[point+i*amountOfPoints] == 1:
 				neighbourColors.add(self.colors[i])
 		return neighbourColors
 	def isUncolored(self):
-		amountOfPoints:int = int(len(self.colors))
+		amountOfPoints = int(len(self.colors))
 		for i in range(amountOfPoints):
 			if self.colors[i] == 0:
 				return True
@@ -67,10 +67,10 @@ class Sudoku:
 	def colorGraph(self):
 		if not self.isUncolored():
 			return "The graph is solved"
-		amountOfPoints:int = int(len(self.colors))
-		saturationDictionary:dict = {}
-		setOfAllColors:set = {x+1 for x in range(self.N)}
-		setOfUncoloredPoints: set = set()
+		amountOfPoints = int(len(self.colors))
+		saturationDictionary = {}
+		setOfAllColors = {x+1 for x in range(self.N)}
+		setOfUncoloredPoints = set()
 		for i in range(amountOfPoints):
 			saturationDictionary[i] = self.getSaturation(i)
 			if self.colors[i] == 0:
@@ -95,10 +95,10 @@ class Sudoku:
 	def colorGraphOneStep(self):
 		if not self.isUncolored():
 			return "The graph is solved"
-		amountOfPoints:int = int(len(self.colors))
-		saturationDictionary:dict = {}
-		setOfAllColors:set = {x+1 for x in range(self.N)}
-		setOfUncoloredPoints: set = set()
+		amountOfPoints = int(len(self.colors))
+		saturationDictionary = {}
+		setOfAllColors = {x+1 for x in range(self.N)}
+		setOfUncoloredPoints = set()
 		for i in range(amountOfPoints):
 			saturationDictionary[i] = self.getSaturation(i)
 			if self.colors[i] == 0:
@@ -116,10 +116,10 @@ class Sudoku:
 		self.colors[maxPoint] = newColor
 		return "No errors, colored point:{0}({1},{2}) to {3}".format(maxPoint,maxPoint%self.N,maxPoint//self.N,newColor)
 	def generateRandomMaybeSolvable(self,toColor):
-		self.globalFifoActionList:list = []
-		setOfAllColors:set = {x+1 for x in range(self.N)}
-		amountOfPoints:int = int(len(self.colors))
-		setOfUncoloredPoints: set = {x for x in range(amountOfPoints)}
+		self.globalFifoActionList = []
+		setOfAllColors = {x+1 for x in range(self.N)}
+		amountOfPoints = int(len(self.colors))
+		setOfUncoloredPoints = {x for x in range(amountOfPoints)}
 		self.colors = [0 for x in range(int(self.N*self.N))]
 		if toColor>amountOfPoints:
 			toColor = amountOfPoints
@@ -131,18 +131,20 @@ class Sudoku:
 	def colorGraphNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
-		amountOfPoints:int = int(len(self.colors))
-		saturationDictionary:dict = {}
-		setOfAllColors:set = {x+1 for x in range(self.N)}
-		setOfUncoloredPoints: set = set()
-		fifoActionList:list = self.globalFifoActionList
-		data:list = copy.copy(self.emptyData)
+		amountOfPoints = int(len(self.colors))
+		saturationDictionary = {}
+		setOfAllColors = {x+1 for x in range(self.N)}
+		setOfUncoloredPoints = set()
+		fifoActionList = self.globalFifoActionList
+		data = copy.copy(self.emptyData)
 		for i in range(amountOfPoints):
 			if self.colors[i] == 0:
 				setOfUncoloredPoints.add(i)	
 				saturationDictionary[i] = self.getSaturation(i)
 			else:
 				saturationDictionary[i] = {0}
+				
+		iteration = 0
 		while self.isUncolored():
 			max = 0
 			maxPoint = data[0]
@@ -162,9 +164,10 @@ class Sudoku:
 					if lowestPossibleColor > pointLowestColor:
 						lowestPossibleColor = pointLowestColor
 						maxPoint = point
-			self.controlledPrint("=========================\ndata: ")
+			iteration+=1
+			self.controlledPrint("========================= {}\ndata: ".format(iteration))
 			self.controlledPrint(data,"")
-			self.controlledPrint(" point:({})".format(maxPoint))
+			self.controlledPrint(" point:({0})({1},{2})".format(maxPoint,maxPoint%self.N,maxPoint//self.N))
 			self.controlledPrint(fifoActionList)
 			self.controlledPrint(setOfUncoloredPoints)
 			triedColors = set(data[1])
@@ -202,11 +205,11 @@ class Sudoku:
 	def colorGraphOneStepNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
-		data:list = self.globalData
-		amountOfPoints:int = int(len(self.colors))
-		saturationDictionary:dict = {}
-		setOfAllColors:set = {x+1 for x in range(self.N)}
-		setOfUncoloredPoints: set = set()
+		data = self.globalData
+		amountOfPoints = int(len(self.colors))
+		saturationDictionary = {}
+		setOfAllColors = {x+1 for x in range(self.N)}
+		setOfUncoloredPoints = set()
 		for i in range(amountOfPoints):
 			if self.colors[i] == 0:
 				setOfUncoloredPoints.add(i)	
@@ -217,7 +220,7 @@ class Sudoku:
 		max = 0
 		maxPoint = data[0]
 		if maxPoint == -1:
-			listOfPointsWithMaxSaturation:list = []
+			listOfPointsWithMaxSaturation = []
 			for i in setOfUncoloredPoints:
 				if len(saturationDictionary[i])> max:
 					maxPoint = i
@@ -259,20 +262,30 @@ s.printColors()
 file = open('test.txt','w')
 file.close()
 while True:
-	print("ESC to exit, enter to solve, q to generate new one, everything else for step")
-	key = ord(getch())
+	print("1 to exit, 2 to solve, 3 to generate new one, 4 else for step")
+	#key = ord(getch())
+	key = input('type number of your choice: ')
+	try:
+		key = int(key)
+	except ValueError:
+		print("Please enter an integer")
+		continue
 	print("pressed key: "+str(key),end="\t")
-	if key == 27: #ESC
+	if key == 1:
 		print('Good Bye')
 		break
-	elif key == 13:	#solve
+	elif key == 2:
 		print(s.colorGraphNew())
 		s.printColors()
-	elif key == 113:	#q
+	elif key == 3:
+		file = open('test.txt','w')
+		file.close()
 		data = int(input("Enter a number of solved points: "))
 		s.generateRandomMaybeSolvable(data)
 		s.printColors()
 		print('Graph generated')
-	else:
+	elif key == 4:
 		print(s.colorGraphOneStepNew())
 		s.printColors()
+	else:
+		print('unsupported integer')
