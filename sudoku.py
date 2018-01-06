@@ -2,8 +2,41 @@ import copy
 import math
 import csv
 
+class SudokuIO:
+    def __init__(self, filename):
+
+        with open(filename, 'r') as open_file:
+            self.reader = csv.Dict
+
+
 
 def get_question_board_from_file(filename):
+    question_board = []
+    answer_board = []
+    with open(filename, 'r') as open_file:
+        reader = csv.reader(open_file)
+        if (next(reader))[0] != 'Question':
+            raise ValueError("The first line should be: Question")
+
+        is_question = True
+        for line in reader:
+            if len(line) == 0:
+                continue
+
+            if line[0] == 'Answer':
+                is_question = False
+                continue
+
+            if is_question:
+                question_board.append([int(i) for i in line])
+            else:
+                answer_board.append([int(i) for i in line])
+
+    rank = int(math.sqrt(len(question_board)))
+    return [rank, question_board, answer_board]
+
+
+def get_question_board_from_file(line):
     question_board = []
     answer_board = []
     with open(filename, 'r') as open_file:
