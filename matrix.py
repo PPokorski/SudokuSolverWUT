@@ -1,7 +1,10 @@
 import math #dla operacji matematycznych
 import random	# dla generowania losowych plansz
-from msvcrt import getch	#dla interface z użytkownikiem (nieużywane)
 import copy	# dla operacji które wymagają kopiowania struktur
+import matrix_database
+import sys
+import time
+		
 class Sudoku:
 	def __init__(self,number,colorsList=None):
 		self.logToTestFile = True
@@ -88,7 +91,136 @@ class Sudoku:
 			newColor = random.sample(setOfAllColors,1)[0]
 			newPoint = random.sample(setOfUncoloredPoints,1)[0]
 			setOfUncoloredPoints.remove(newPoint)
-			self.colors[newPoint] = newColor
+			self.colors[newPoint] = newColor			
+	def generateRandomMaybeSolvable2(self,toColor):
+		self.globalFifoActionList = []
+		setOfAllColors = {x+1 for x in range(self.N)}
+		amountOfPoints = int(len(self.colors))
+		setOfUncoloredPoints = {x for x in range(amountOfPoints)}
+		self.colors = [0 for x in range(int(self.N*self.N))]
+		if toColor>amountOfPoints:
+			toColor = amountOfPoints
+		for n in range(toColor):
+			t = True
+			while t:
+				notAllowedColors = set()
+				newPoint = random.sample(setOfUncoloredPoints,1)[0]
+				for i in range(amountOfPoints):
+					if self.matrix[newPoint+i*amountOfPoints] == 1:
+						notAllowedColors.add(self.colors[i]) 
+				avaliableColors = setOfAllColors - notAllowedColors
+				if len(avaliableColors) == 0:
+					t = True
+				else:
+					t = False
+					newColor = random.sample(avaliableColors,1)[0]
+					setOfUncoloredPoints.remove(newPoint)
+					self.colors[newPoint] = newColor			
+	def generateRandomSolvable(self,toColor):
+		self.globalFifoActionList = []
+		setOfAllColors = {x+1 for x in range(self.N)}
+		self.colors = [0 for x in range(int(self.N*self.N))]
+		amountOfPoints = int(len(self.colors))
+		
+		listOfIndependentSets = []
+		
+		newISet = None
+		self.controlledPrint('*New color')
+		while newISet==None:
+			newISet = self.createIndependentSet(1,listOfIndependentSets)
+			self.controlledPrint('++generating new set')
+		listOfIndependentSets.append(copy.copy(newISet))
+		self.controlledPrint('listOfIndependentSets:{}'.format(listOfIndependentSets))
+		for n in range(1,len(setOfAllColors)):
+			newISet = self.createMoreSets(n+1,listOfIndependentSets)
+			if newISet is None:
+				self.controlledPrint ("Unable to find next independent set")
+			else:
+				listOfIndependentSets.append(copy.copy(newISet))
+		for s in listOfIndependentSets:
+			self.controlledPrint(s)
+			
+		setOfColoredPoints = set()
+		maxToColor = 0
+		for s in listOfIndependentSets:
+			maxToColor+=len(s)
+		if maxToColor < toColor:
+			toColor = maxToColor
+		setOfAvaliableColors = {x+1 for x in range(len(listOfIndependentSets))}
+		for n in range(toColor):
+			newColor = random.sample(setOfAvaliableColors,1)[0]
+			newPoint = random.sample(listOfIndependentSets[newColor-1],1)[0]
+			setOfColoredPoints.add(newPoint)
+			listOfIndependentSets[newColor-1].remove(newPoint)
+			if len(listOfIndependentSets[newColor-1]) == 0:
+				setOfAvaliableColors.remove(newColor)	
+			self.colors[newPoint] = newColor		
+	def createIndependentSet(self,n,listOfIndependentSets ):
+		newISet = set()
+		setOfTakenPoints = set()
+		setOfAllColors = {x+1 for x in range(self.N)}
+		amountOfPoints = int(len(self.colors))
+		for s in listOfIndependentSets:
+			setOfTakenPoints |=s
+		setOfUntakenPoints = {x for x in range(amountOfPoints)} - setOfTakenPoints
+		
+		while len(newISet)<self.N:
+			setOfPossiblePoints = setOfUntakenPoints - newISet
+			setOfConfirmedPoints = set()
+			newPoint = -1
+			if len(newISet) != 0:
+				for point in setOfPossiblePoints:
+					pointIsGood = True
+					for setPoint in newISet:
+						if self.matrix[point+setPoint*amountOfPoints] == 1:
+							pointIsGood = False
+							break
+					if pointIsGood:
+						setOfConfirmedPoints.add(point)
+						self.controlledPrint('Point Added {}'.format(point))
+			else:
+				setOfConfirmedPoints = setOfPossiblePoints
+			if len(setOfConfirmedPoints)!=0:
+				newPoint = random.sample(setOfConfirmedPoints,1)[0]
+				newISet.add(newPoint)
+			else:
+				return None
+			self.controlledPrint("n:{0} newISet:{1} newPoint:{2}  setOfConfirmedPoints:{3}, list of Independent Sets:{4}, setOfUntakenPoints:{5}".format(n,newISet.__str__(),newPoint,setOfConfirmedPoints.__str__(),listOfIndependentSets.__str__(),setOfUntakenPoints.__str__()))
+		return newISet
+	def createMoreSets(self,n,listOfIndependentSets):
+		setOfTakenPoints = set()
+		setOfAllColors = {x+1 for x in range(self.N)}
+		amountOfPoints = int(len(self.colors))
+		for s in listOfIndependentSets:
+			setOfTakenPoints |=s
+		setOfUntakenPoints = {x for x in range(amountOfPoints)} - setOfTakenPoints
+		listOfUntakenPoints = list(setOfUntakenPoints)
+		for index in range(0, len(listOfUntakenPoints)):
+			newISet = set()
+			newPoint = listOfUntakenPoints[index]
+			newISet.add(newPoint)
+			for i in range(0,len(setOfUntakenPoints)):
+				for x in range(i,len(setOfUntakenPoints)):
+					isOK = True	
+					consideredPoint = listOfUntakenPoints[x]
+					if newPoint == consideredPoint:
+						isOK = False
+					else:
+						for setPoint in newISet:
+							if self.matrix[consideredPoint+setPoint*amountOfPoints] == 1:
+								isOK = False
+					if isOK:
+						newISet.add(consideredPoint)
+						self.controlledPrint("n:{0} newISet:{1} newPoint:{2}, listOfUntakenPoints:{3}, index:{4}, i:{5}".format(n,newISet.__str__(),consideredPoint,listOfUntakenPoints.__str__(),index,i))
+				if len(newISet) == self.N:
+					return newISet
+				else:
+					newISet = set()
+					newPoint = listOfUntakenPoints[index]
+					newISet.add(newPoint)
+		return None	
+	def setColorsFromDiagram(self,diagram):
+		self.colors = copy.copy(diagram.colors)
 	def colorGraphNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
@@ -165,10 +297,11 @@ class Sudoku:
 				data = copy.copy(self.emptyData)
 		return "No errors"
 	def controlledPrint(self,toPrint,thisEnd="\n"):
-		if(self.logToTestFile):
-			file = open('test.txt','a')
-			file.write(toPrint.__str__()+thisEnd)
-			file.close()
+		pass
+		#if(self.logToTestFile):
+		#	file = open('log.txt','a')
+		#	file.write(toPrint.__str__()+thisEnd)
+		#	file.close()
 	def colorGraphOneStepNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
@@ -223,45 +356,93 @@ class Sudoku:
 				
 			return "No errors, colored point:{0}({1},{2}) to {3}".format(maxPoint,maxPoint%self.N,maxPoint//self.N,newColor)
 
-data = int(input('please input sudoku base: '))
-s = Sudoku(data)
-s.printColors()
-file = open('test.txt','w')
-file.close()
-while True:
-	print("1 to exit, 2 to solve, 3 to generate new one, 4 else for step, 5 for settings")
-	key = input('type number of your choice: ')
-	try:
-		key = int(key)
-	except ValueError:
-		print("Please enter an integer")
-		continue
-	print("pressed key: "+str(key),end="\t")
-	if key == 1:
-		print('Good Bye')
-		break
-	elif key == 2:
-		print(s.colorGraphNew())
-		s.printColors()
-	elif key == 3:
-		file = open('test.txt','w')
-		file.close()
-		data = int(input("Enter a number of solved points: "))
-		s.generateRandomMaybeSolvable(data)
-		s.printColors()
-		print('Graph generated')
-	elif key == 4:
-		print(s.colorGraphOneStepNew())
-		s.printColors()
-	elif key == 5:
-		data = int(input("Enter 1 if you want to print test data to a file. 0 otherwise: "))
-		if data == 1:
-			s.logToTestFile = True
-			print("test data will be printed in 'test.txt' file in your directory")
-		elif data == 0:
-			s.logToTestFile = False
-			print("test data will not be saved")
+def consoleInterface():
+	database = matrix_database.Database()
+	data = int(input('please input sudoku base: '))
+	s = Sudoku(data)
+	s.printColors()
+	file = open('log.txt','w')
+	file.close()
+	while True:
+		print("1 to exit, 2 to solve, 3 for new diagram, 4 else for step, 5 for settings")
+		key = input('type number of your choice: ')
+		try:
+			key = int(key)
+		except ValueError:
+			print("Please enter an integer")
+			continue
+		print("pressed key: "+str(key),end="\t")
+		if key == 1:
+			print('Good Bye')
+			break
+		elif key == 2:
+			print(s.colorGraphNew())
+			s.printColors()
+		elif key == 3:
+			file = open('log.txt','w')
+			file.close()
+			data = int(input("1 to retry, 2 to generate, 3 for Database Easy,\ntype number of your choice: "))
+			if data == 1:
+				print("retry")
+			elif data == 2:
+				data = int(input("Enter a number of solved points: "))
+				s.generateRandomSolvable(data)
+				s.printColors()
+				print('Graph generated')
+			elif data == 3:
+				s.setColorsFromDiagram(database.getEasy(s.n))
+				s.printColors()
+				print('Graph set')
+		elif key == 4:
+			print(s.colorGraphOneStepNew())
+			s.printColors()
+		elif key == 5:
+			data = int(input("Enter 1 if you want to print test data to a file. 0 otherwise: "))
+			if data == 1:
+				s.logToTestFile = True
+				print("test data will be printed in 'log.txt' file in your directory")
+			elif data == 0:
+				s.logToTestFile = False
+				print("test data will not be saved")
+			else:
+				print("unknown input - settings unchanged")
 		else:
-			print("unknown input - settings unchanged")
+			print('unsupported integer')
+
+def test(base,numberOfTests):
+	database = matrix_database.Database()
+	s = Sudoku(base)
+	file = open('log.txt','w')
+	file.close()
+	results = "Begining the test of {0}x{0} sudoku, {1} times\n\n".format(base*base,numberOfTests)
+	startTime = time.process_time()
+	if base == 3:
+		for i in range(numberOfTests):
+			s.setColorsFromDiagram(database.getEasy(s.n))
+			results += "\n=====(test number({})) ".format(i)+ s.colorGraphNew()
+			print('\r test {0} of {1}'.format(i+1,numberOfTests),end = '\r')
 	else:
-		print('unsupported integer')
+		for i in range(numberOfTests):
+			s.generateRandomSolvable(base*base)
+			results += "\n=====(test number({})) ".format(i)+ s.colorGraphNew()
+			print('\r test {0} of {1}'.format(i+1,numberOfTests),end = '\r')
+	endTime = time.process_time()
+	results +="\n\n Time of all tests {0}s, average {1}s per test".format(endTime-startTime,(endTime-startTime)/numberOfTests)
+	print()
+	return results
+helpMessage = 'in order to activate the test mode you need to type \'test\' followed by two integers, sudoku base and number of tests respectivly\n'
+if len(sys.argv) > 3:
+	if sys.argv[1] == 'test' and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+		base = int(sys.argv[2])
+		numberOfTests = int(sys.argv[3])
+		print('ready to test')
+		file = open('testResult.txt','w')
+		file.write(test(base,numberOfTests))
+		file.close()
+	else:
+		print(helpMessage)
+		consoleInterface()			
+elif len(sys.argv) > 1:
+	print(helpMessage)
+else:
+	consoleInterface()			
