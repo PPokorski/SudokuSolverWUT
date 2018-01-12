@@ -3,23 +3,8 @@ import matrix
 import matrix_database
 
 class TestMatrix(unittest.TestCase):
-
-	def test_matrix_2(self):
-		with open('sudoku_4x4_solution.csv','r') as file:
-			file.readline()
-			for line in file:
-				pass
-		self.check_solution(2,[1,2,3,4,3,4,1,2,2,1,0,0,4,3,0,0],[1,2,3,4,3,4,1,2,2,1,4,3,4,3,2,1])
-		
-	def hgh(self):
-		self.assertEqual(1,1)
-	def check_solution(self,n,diagram,solution):
-		sudoku = matrix.Sudoku(n)
-		diagram_1 = matrix_database.Diagram(n,diagram)
-		sudoku.setColorsFromDiagram(diagram_1)
-		sudoku.colorGraphNew()
-		resultDiagram = sudoku.getColorsAsDiagram()
-		self.assertEqual(solution,resultDiagram.colors)
+	def test_dummy(self):
+		self.assertEqual(0,0)
 
 def create_test(n,diagram,solution):
 	def check_solution(self):
@@ -41,7 +26,7 @@ def stringToLine(str):
 		elif ord(c)>=ord('a'):
 			list.append(ord(c) - ord('a') + 10)
 	return list
-
+	
 if __name__ == '__main__':
 	diagramList2 = []
 	solutionList2 = []
@@ -70,5 +55,3 @@ if __name__ == '__main__':
 			setattr(TestMatrix,test_method.__name__,test_method)
 			id+=1
 	unittest.main()
-#191451218862139574145218396218374951359621487417895621916583742783942165524716839
-#935467218862139754147582396651374982789621543423895671316958427298743165574216839

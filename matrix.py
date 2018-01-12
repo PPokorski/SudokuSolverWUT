@@ -92,24 +92,9 @@ class Sudoku:
 			if self.colors[i] == 0:
 				return True
 		return False
-	# Prosty generator zadań sudoku z 'toColor' zamalowanymi polami. Zadanie może nie być możliwe do rozwiązania.
+	# Prosty generator zadań sudoku z 'toColor' zamalowanymi polami. Zadanie może nie być możliwe do rozwiązania. 
 	# toColor - ilość pól do zamalowania
-	def generateRandomMaybeSolvable1(self,toColor):
-		self.globalFifoActionList = []
-		setOfAllColors = {x+1 for x in range(self.N)}
-		amountOfPoints = int(len(self.colors))
-		setOfUncoloredPoints = {x for x in range(amountOfPoints)}
-		self.colors = [0 for x in range(int(self.N*self.N))]
-		if toColor>amountOfPoints:
-			toColor = amountOfPoints
-		for n in range(toColor):
-			newColor = random.sample(setOfAllColors,1)[0]
-			newPoint = random.sample(setOfUncoloredPoints,1)[0]
-			setOfUncoloredPoints.remove(newPoint)
-			self.colors[newPoint] = newColor			
-	# Prosty generator zadań sudoku z 'toColor' zamalowanymi polami. Zadanie może nie być możliwe do rozwiązania.
-	# toColor - ilość pól do zamalowania
-	def generateRandomMaybeSolvable2(self,toColor):
+	def generateRandomMaybeSolvable(self,toColor):
 		self.globalFifoActionList = []
 		setOfAllColors = {x+1 for x in range(self.N)}
 		amountOfPoints = int(len(self.colors))
@@ -330,7 +315,7 @@ class Sudoku:
 				fifoActionList.append([maxPoint,newTriedColors])
 				data = copy.copy(self.emptyData)
 		return "No errors"
-	# Wypisuje dane dotyczące działania programu do loga. Ponieważ otwieranie i zamykanie plików są kosztownymi czasowo operacjami, funkcja ta została wyłączona.
+	# Wypisuje dane dotyczące działania programu do loga. Używana podczas debugowania. Ponieważ otwieranie i zamykanie plików są kosztownymi czasowo operacjami, funkcja ta została wyłączona.
 	# toPrint - string do zapisania
 	# thisEnd - ostatni znak
 	def controlledPrint(self,toPrint,thisEnd="\n"):
@@ -495,7 +480,6 @@ def test(base,numberOfTests):
 	s = Sudoku(base)
 	file = open('log.txt','w')
 	file.close()
-	#results = "Begining the test of {0}x{0} sudoku\n\n".format(base*base)
 	results = 'diagram number,solving result,difficulty,time\n'
 	timeResults = ""
 	if base == 3 or base == 2 or base == 4:
@@ -526,7 +510,6 @@ def test(base,numberOfTests):
 		endTime = time.process_time()
 		if numberOfTests!=0:
 			timeResults +="\n\n Time of all tests {0}s, average {1}s per test".format(endTime-startTime,(endTime-startTime)/numberOfTests)
-	#results += timeResults
 	print()
 	return results
 

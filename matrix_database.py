@@ -2,9 +2,10 @@ import copy	# dla operacji które wymagają kopiowania struktur
 import math #dla operacji matematycznych
 import random	# dla generowania losowych plansz i losowego wybierania
 # Klasa opisująca diagram, za pomocą której możliwe jest przenoszenie diagramów w spójnym formacie
-# n - baza diagramu
-# colorsList - diagram w postaci listy do skopiowania
 class Diagram:
+	# Konstruktor.
+	# n - baza diagramu
+	# colorsList - diagram w postaci listy do skopiowania
 	def __init__(self,n,colorsList=None):
 		self.n = n
 		self.N = int(math.pow(self.n,2))
@@ -19,7 +20,6 @@ class Diagram:
 				self.colors = [0 for x in range(int(self.N*self.N))]
 		else:
 			self.colors = [0 for x in range(int(self.N*self.N))]
-
 # Klasa której zadaniem jest załadowanie testów z plików i udostępnianie ich.
 class Database:
 	# Konstruktor. Tworzy listy zadań sudoku, i wypełnia je danymi z plików
@@ -36,12 +36,13 @@ class Database:
 			self.Test3.append([])
 			self.Test2.append([])
 		if doLoad:
-			self.fillEasy3(self.EasyList3)
-			self.fillEasy2(self.EasyList2)
+			self.fillEasy(self.EasyList2,'sudokuDiagrams2.txt',2)
+			self.fillEasy(self.EasyList3,'sudokuDiagrams3.txt',3)
 			self.fillEasy(self.EasyList4,'sudoku_16_test_diagrams.txt',4)
-			self.fillTest(self.Test4,'sudoku_16_test_diagrams.txt',4)
-			self.fillTest(self.Test3,'sudoku_9_test_diagrams.csv',3)
 			self.fillTest(self.Test2,'sudoku_4_test_diagrams.csv',2)
+			self.fillTest(self.Test3,'sudoku_9_test_diagrams.csv',3)
+			self.fillTest(self.Test4,'sudoku_16_test_diagrams.txt',4)
+
 	# Udostępnia jedno losowe 'proste' zadanie sudoku
 	# n - baza sudoku
 	def getEasy(self,n):
@@ -76,57 +77,12 @@ class Database:
 			return len(self.Test3[difficulty])
 		elif n==4:
 			return len(self.Test4[difficulty])
-		return -1
-	# Wypełnia listę z zadaniami o bazie 3
-	# list - referencja na listę do wypełnienia
-	def fillEasy3(self,list):
-		ListOfLists = []
-		ListOfLists.append([9,0,1,0,0,2,7,0,8,0,4,0,8,9,0,0,1,0,8,7,0,5,0,3,0,0,9,5,6,7,0,0,0,0,0,0,0,0,9,0,0,0,8,0,0,0,0,0,0,0,0,1,7,2,7,0,0,6,0,8,0,2,3,0,3,0,0,2,9,0,5,0,2,0,4,3,0,0,6,0,1])
-		file = None
-		try:
-			file = open('sudokuDiagrams3.txt','r')
-		except:
-			print('couldn\'t open file \'sudokuDiagrams3.txt\' ')
-			return
-		for line in file:
-			newList = []
-			for letter in line:
-				if letter == '.':
-					newList.append(0)
-				if letter.isdigit():
-					newList.append(int(letter))
-			ListOfLists.append(copy.copy(newList))
-		file.close()
-		for l in ListOfLists:
-			if len(l) == 81:
-				list.append(Diagram(3,l))
-			else:
-				print("list {} is wrong!".format(l.__str__()))			
-	# Wypełnia listę z zadaniami o bazie 2
-	# list - referencja na listę do wypełnienia
-	def fillEasy2(self,list):
-		ListOfLists = []
-		file = None
-		try:
-			file = open('sudokuDiagrams2.txt','r')
-		except:
-			print('couldn\'t open file \'sudokuDiagrams2.txt\' ')
-			return
-		for line in file:
-			newList = []
-			for letter in line:
-				if letter == '.':
-					newList.append(0)
-				if letter.isdigit():
-					newList.append(int(letter))
-			ListOfLists.append(copy.copy(newList))
-		file.close()
-		for l in ListOfLists:
-			if len(l) == 16:
-				list.append(Diagram(2,l))
-			else:
-				print("list {} is wrong!".format(l.__str__()))
+		return -1	
 	
+	# Wypełnia listę z zadaniami o bazie na
+	# list - referencja na listę do wypełnienia
+	# fileName - nazwa pliku z którego pobierane są zadania
+	# n - baza sudoku
 	def fillEasy(self,list,fileName,n):
 		ListOfLists = []
 		file = None
