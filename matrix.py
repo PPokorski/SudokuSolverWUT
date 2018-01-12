@@ -1,11 +1,16 @@
 import math #dla operacji matematycznych
 import random	# dla generowania losowych plansz
 import copy	# dla operacji które wymagają kopiowania struktur
-import matrix_database
-import sys
-import time
+import matrix_database # dostęp do wygenerowanych wcześniej zadań sudoku
+import sys	# dostęp do argumentów z linii poleceń
+import time	# aby móc policzyć ilość czasu które zajmują testy
 		
+# Klasa odpowiadająca za generowanie i rozwiązywanie zadań sudoku
 class Sudoku:
+	# Kostruktor. Jako dane przyjmuje bazę sudoku. Baza sudoku równa się pierwiastkowi dłogości boku.
+	# Konstruktor ten ma za zadanie wygenerować macierz na której będą zapisane numery na polach zadania sudoku. Wygenerowuje również macierz sąsiedztwa dla grafu którego pokolorowanie odpowiada rozwiązaniu zadania sudoku.
+	# number - baza sudoku
+	# colorsList - lista kolorów do skopiowania jeżeli jest taka potrzeba
 	def __init__(self,number,colorsList=None):
 		self.logToTestFile = True
 		self.n = number	#stopien sudoku	Tablica sudoku jest n^n x n^n
@@ -27,8 +32,10 @@ class Sudoku:
 		self.globalFifoActionList = []
 		self.emptyData = [-1,[]]
 		self.globalData = copy.copy(self.emptyData)
+	# Wypisuje dane o kolorach sudoku na konsoli
 	def printColors(self):
 		print(self.stringColors())
+	# Wytwarza i zwraca string zawierający informacje o kolorach pól sudoku. Zero oznacza brak koloru.
 	def stringColors(self):
 		toPrint = " "
 		unitWidth = 2+self.N//10
@@ -43,6 +50,8 @@ class Sudoku:
 				toPrint+='| '
 			toPrint+="{0: <{1}}".format(int(self.colors[i]),unitWidth)
 		return toPrint
+	# Wytwarza i zwraca string zawierający informacje o nasyceniu pól sudoku.
+	# satrationDictionary - słownik z informacją o nasyceniu każdego pola
 	def stringSaturation(self,saturationDictionary):
 		toPrint = " "
 		unitWidth = 2+self.N//10
@@ -58,6 +67,7 @@ class Sudoku:
 			numberToPrint = len(saturationDictionary[i])
 			toPrint+="{0: <{1}}".format(int(numberToPrint),unitWidth)
 		return toPrint	
+	# Wypisuje do konsoli macierz sąsiedztwa grafu.
 	def printMatrixList(self):
 		toPrint = " "
 		matrixWidth = (self.N*self.N)
@@ -66,6 +76,8 @@ class Sudoku:
 				toPrint+='\n'
 			toPrint+=str(int(self.matrix[i]))
 		print(toPrint)	
+	# Oblicza i zwraca nasycenie danego pola point.
+	# point - pole którego nasycenie jest zwracane
 	def getSaturation(self,point):
 		neighbourColors = {0}
 		amountOfPoints = int(len(self.colors))
@@ -73,13 +85,16 @@ class Sudoku:
 			if self.matrix[point+i*amountOfPoints] == 1:
 				neighbourColors.add(self.colors[i])
 		return neighbourColors
+	# Sprawdza, czy zadanie sudoku zostało rozwiązane czy nie. Zwraca odpowiednią wartość boolean w obu przypadkach.
 	def isUncolored(self):
 		amountOfPoints = int(len(self.colors))
 		for i in range(amountOfPoints):
 			if self.colors[i] == 0:
 				return True
 		return False
-	def generateRandomMaybeSolvable(self,toColor):
+	# Prosty generator zadań sudoku z 'toColor' zamalowanymi polami. Zadanie może nie być możliwe do rozwiązania.
+	# toColor - ilość pól do zamalowania
+	def generateRandomMaybeSolvable1(self,toColor):
 		self.globalFifoActionList = []
 		setOfAllColors = {x+1 for x in range(self.N)}
 		amountOfPoints = int(len(self.colors))
@@ -92,6 +107,8 @@ class Sudoku:
 			newPoint = random.sample(setOfUncoloredPoints,1)[0]
 			setOfUncoloredPoints.remove(newPoint)
 			self.colors[newPoint] = newColor			
+	# Prosty generator zadań sudoku z 'toColor' zamalowanymi polami. Zadanie może nie być możliwe do rozwiązania.
+	# toColor - ilość pól do zamalowania
 	def generateRandomMaybeSolvable2(self,toColor):
 		self.globalFifoActionList = []
 		setOfAllColors = {x+1 for x in range(self.N)}
@@ -116,6 +133,8 @@ class Sudoku:
 					newColor = random.sample(avaliableColors,1)[0]
 					setOfUncoloredPoints.remove(newPoint)
 					self.colors[newPoint] = newColor			
+	# Skomplikowany generator zadań sudoku, z 'toColor' zamalowanymi polami. Zadanie jest pewne do rozwiązania, jako że wytwarzane zostaje całe sudoku, którego pola potem zostają czyszczone. Generacja zadań dla sudoku o bazie większej niż 2 zajmuje zauważalną ilość czasu.
+	# toColor - ilość pól do zamalowania
 	def generateRandomSolvable(self,toColor):
 		self.globalFifoActionList = []
 		setOfAllColors = {x+1 for x in range(self.N)}
@@ -154,8 +173,11 @@ class Sudoku:
 			listOfIndependentSets[newColor-1].remove(newPoint)
 			if len(listOfIndependentSets[newColor-1]) == 0:
 				setOfAvaliableColors.remove(newColor)	
-			self.colors[newPoint] = newColor		
-	def createIndependentSet(self,n,listOfIndependentSets ):
+			self.colors[newPoint] = newColor
+	# Tworzy losowy maksymalny zbiór niezależny. Nie ma pewności utworzenia zbioru, jeżeli inne punkty zostały wyłączone do innych zbiorów niezależnych oryginalnego grafu którego pokolorowanie rozwiązuje zadanie sudoku. n jest liczbą iteracji, listOfIndependentSets jest listą dotychczasowo znalezionych zbiorów niezależnych.
+	# n - numer iteracji operacji.
+	# listOfIndependentSets - lista z wcześniej znalezionymi zbiorami niezależnymi.
+	def createIndependentSet(self,n,listOfIndependentSets):
 		newISet = set()
 		setOfTakenPoints = set()
 		setOfAllColors = {x+1 for x in range(self.N)}
@@ -187,6 +209,9 @@ class Sudoku:
 				return None
 			self.controlledPrint("n:{0} newISet:{1} newPoint:{2}  setOfConfirmedPoints:{3}, list of Independent Sets:{4}, setOfUntakenPoints:{5}".format(n,newISet.__str__(),newPoint,setOfConfirmedPoints.__str__(),listOfIndependentSets.__str__(),setOfUntakenPoints.__str__()))
 		return newISet
+	# Tworzy maksymalny zbiór niezależny. Ma pewność utworzenia zbioru, jednakże z powodu braku elementu losowego zbiory są te zawsze takie same dla takiego samego listOfIndependentSets. n jest liczbą iteracji, listOfIndependentSets jest listą dotychczasowo znalezionych zbiorów niezależnych.
+	# n - numer iteracji operacji.
+	# listOfIndependentSets - lista z wcześniej znalezionymi zbiorami niezależnymi.
 	def createMoreSets(self,n,listOfIndependentSets):
 		setOfTakenPoints = set()
 		setOfAllColors = {x+1 for x in range(self.N)}
@@ -219,8 +244,11 @@ class Sudoku:
 					newPoint = listOfUntakenPoints[index]
 					newISet.add(newPoint)
 		return None	
+	# Ustawia obecne rozwiązanie na podany diagram diagram.
+	# diagram - diagram na który ustawiamy
 	def setColorsFromDiagram(self,diagram):
 		self.colors = copy.copy(diagram.colors)
+	# Rozwiązuje obecne zadanie sudoku. Jeżeli nie jest w stanie go rozwiązać, pozostawia zadanie nienaruszone, i zwraca odpowiedni komunikat.
 	def colorGraphNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
@@ -240,9 +268,14 @@ class Sudoku:
 		while self.isUncolored():
 			iteration+=1
 			self.controlledPrint("========================= {}\ndata: \n choosing the point to color\n[avaliable colors of compared point]\n (picked point) min color >? min color(compared point)".format(iteration))
-			
 			max = 0
 			maxPoint = data[0]
+			for i in range(amountOfPoints):
+				if self.colors[i] == 0:
+					setOfUncoloredPoints.add(i)	
+					saturationDictionary[i] = self.getSaturation(i)
+				else:
+					saturationDictionary[i] = {0}	
 			if maxPoint == -1:
 				listOfPointsWithMaxSaturation = []
 				for i in setOfUncoloredPoints:
@@ -254,6 +287,7 @@ class Sudoku:
 					elif len(saturationDictionary[i])== max:
 						listOfPointsWithMaxSaturation.append(i)
 				lowestPossibleColor = self.N+1
+				self.controlledPrint('list of points with max saturation {}'.format(listOfPointsWithMaxSaturation))
 				for point in listOfPointsWithMaxSaturation:
 					pointLowestColor = min((setOfAllColors - saturationDictionary[point])|{self.N+1})
 					self.controlledPrint((setOfAllColors - saturationDictionary[point])|{self.N+1})
@@ -296,12 +330,16 @@ class Sudoku:
 				fifoActionList.append([maxPoint,newTriedColors])
 				data = copy.copy(self.emptyData)
 		return "No errors"
+	# Wypisuje dane dotyczące działania programu do loga. Ponieważ otwieranie i zamykanie plików są kosztownymi czasowo operacjami, funkcja ta została wyłączona.
+	# toPrint - string do zapisania
+	# thisEnd - ostatni znak
 	def controlledPrint(self,toPrint,thisEnd="\n"):
 		pass
 		#if(self.logToTestFile):
 		#	file = open('log.txt','a')
 		#	file.write(toPrint.__str__()+thisEnd)
 		#	file.close()
+	# Wykonuje jeden krok rozwiązywania zadania sudoku. Jeżeli nie jest w stanie go rozwiązać, pozostawia zadanie nienaruszone, i zwraca odpowiedni komunikat.
 	def colorGraphOneStepNew(self):
 		if not self.isUncolored():
 			return "The graph is solved"
@@ -315,8 +353,7 @@ class Sudoku:
 				setOfUncoloredPoints.add(i)	
 				saturationDictionary[i] = self.getSaturation(i)
 			else:
-				saturationDictionary[i] = {0}
-				
+				saturationDictionary[i] = {0}				
 		max = 0
 		maxPoint = data[0]
 		if maxPoint == -1:
@@ -355,9 +392,26 @@ class Sudoku:
 			self.globalData = copy.copy(self.emptyData)
 				
 			return "No errors, colored point:{0}({1},{2}) to {3}".format(maxPoint,maxPoint%self.N,maxPoint//self.N,newColor)
-
+	# Zwraca obecny stan zadania sudoku jako string znaków.
+	def getColorsAsTemplate(self):
+		toReturn = ""
+		for c in self.colors:
+			if c == 0:
+				toReturn+='.'
+			else:
+				if c > 9:
+					toReturn+=chr(ord('a')+c-10)
+				else:
+					toReturn+=str(c)
+		return toReturn
+	# Zwraca obecny stan zadania sudoku jako diagram
+	def getColorsAsDiagram(self):
+		return matrix_database.Diagram(self.n,self.colors)
+# Funkcja kontrolująca interface użytkownika
 def consoleInterface():
+	print('loading tests')
 	database = matrix_database.Database()
+	print('loading complete')
 	data = int(input('please input sudoku base: '))
 	s = Sudoku(data)
 	s.printColors()
@@ -397,52 +451,132 @@ def consoleInterface():
 			print(s.colorGraphOneStepNew())
 			s.printColors()
 		elif key == 5:
-			data = int(input("Enter 1 if you want to print test data to a file. 0 otherwise: "))
+			data = int(input("Enter 1 to retry. Enter 2 if you want to print test data to a file, 3 otherwise. Enter 4 if you want to generate sudoku diagrams: "))
 			if data == 1:
+				print("retry")
+			elif data == 2:
 				s.logToTestFile = True
 				print("test data will be printed in 'log.txt' file in your directory")
-			elif data == 0:
+			elif data == 3:
 				s.logToTestFile = False
 				print("test data will not be saved")
+			elif data == 4:
+				print("specify parameters:")
+				base = 0
+				hints = 0
+				amount = 0
+				try:
+					base = input('type base: ')
+					base = int(base)
+					hints = input('type amount of hints: ')
+					hints = int(hints)
+					amount = input('type amount of tests to make: ')
+					amount = int(amount)
+				except ValueError:
+					print("Unable to proceed, because integers were not inputted")
+				else:
+					print('result will be stored in {0}x{0}sudokus{1}({2}).txt file'.format(base*base,hints,amount))
+					print('preparing to create Puzzles')
+					createPuzzles(base,hints,amount)
+			elif data == 5:
+				s.setColorsFromDiagram(matrix_database.Diagram(3,[0,0,0,0,0,0,2,0,0,8,6,0,1,0,0,0,0,4,0,0,0,0,0,0,3,9,6,0,0,0,3,0,4,0,0,0,0,0,9,6,2,1,0,0,0,4,0,0,8,9,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,5,0,4,0,0,0,8,3,9]))
 			else:
 				print("unknown input - settings unchanged")
 		else:
 			print('unsupported integer')
 
+# Funkcja przeprowadzająca testy. base - baza sudoku, numberOfTests - ilość testów. Testy zostają przeprowadzone, a dane o czasie przeprowadzania testów zostają zwrócone.
+# base - baza sudoku
+# numberOfTests - jeżeli testy nie zostały wczytane z pliku, program wygeneruje testy w podanej liczbie
 def test(base,numberOfTests):
+	print('loading tests')
 	database = matrix_database.Database()
+	print('loading complete')
 	s = Sudoku(base)
 	file = open('log.txt','w')
 	file.close()
-	results = "Begining the test of {0}x{0} sudoku, {1} times\n\n".format(base*base,numberOfTests)
-	startTime = time.process_time()
-	if base == 3:
-		for i in range(numberOfTests):
-			s.setColorsFromDiagram(database.getEasy(s.n))
-			results += "\n=====(test number({})) ".format(i)+ s.colorGraphNew()
-			print('\r test {0} of {1}'.format(i+1,numberOfTests),end = '\r')
+	#results = "Begining the test of {0}x{0} sudoku\n\n".format(base*base)
+	results = 'diagram number,solving result,difficulty,time\n'
+	timeResults = ""
+	if base == 3 or base == 2 or base == 4:
+		for dif in range(4):
+			amountOfTests = database.getAmountOfTests(base,dif)
+			timeSum = 0
+			for i in range(amountOfTests):
+				diagram = database.getTest(base,dif,i)
+				#startTime = time.process_time()
+				startTime = time.perf_counter()
+				if diagram is not None:
+					s.setColorsFromDiagram(database.getTest(base,dif,i))
+					result = s.colorGraphNew()
+				#endTime = time.process_time()
+				endTime = time.perf_counter()
+				timeOfTest = endTime-startTime
+				results += "{0},{1},{2},{3}\n".format(i,result,dif,timeOfTest)
+				timeSum+=timeOfTest
+				print('\r test {0} of {1} | difficulty {2}     '.format(i+1,amountOfTests,dif),end = '\r')
+			if amountOfTests != 0:
+				timeResults +="\n Time of all tests {0}s, average {1}s per test, difficulty {2}".format(timeSum,(timeSum)/amountOfTests,dif)
 	else:
+		startTime = time.process_time()
 		for i in range(numberOfTests):
 			s.generateRandomSolvable(base*base)
 			results += "\n=====(test number({})) ".format(i)+ s.colorGraphNew()
-			print('\r test {0} of {1}'.format(i+1,numberOfTests),end = '\r')
-	endTime = time.process_time()
-	results +="\n\n Time of all tests {0}s, average {1}s per test".format(endTime-startTime,(endTime-startTime)/numberOfTests)
+			print('\r test {0} of {1}     '.format(i+1,numberOfTests),end = '\r')
+		endTime = time.process_time()
+		if numberOfTests!=0:
+			timeResults +="\n\n Time of all tests {0}s, average {1}s per test".format(endTime-startTime,(endTime-startTime)/numberOfTests)
+	#results += timeResults
 	print()
 	return results
-helpMessage = 'in order to activate the test mode you need to type \'test\' followed by two integers, sudoku base and number of tests respectivly\n'
-if len(sys.argv) > 3:
-	if sys.argv[1] == 'test' and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-		base = int(sys.argv[2])
-		numberOfTests = int(sys.argv[3])
-		print('ready to test')
-		file = open('testResult.txt','w')
-		file.write(test(base,numberOfTests))
-		file.close()
-	else:
+
+# Funkcja decydująca o tym, czy uruchomić konsolę użytkownika, czy przeprowadzać testy na podstawie danych z konsoli.
+def start():
+	helpMessage = 'in order to activate the test mode you need to type \'test\' followed by two integers, sudoku base and number of tests respectivly\n'
+	if len(sys.argv) > 2:
+		if sys.argv[1] == 'test' and sys.argv[2].isdigit():
+			base = int(sys.argv[2])
+			numberOfTests = 0
+			if len(sys.argv) > 3:
+				numberOfTests = int(sys.argv[3])
+			print('ready to test')
+			file = open('test_Result.csv','w')
+			file.write(test(base,numberOfTests))
+			file.close()
+		else:
+			print(helpMessage)
+			consoleInterface()			
+	elif len(sys.argv) > 1:
 		print(helpMessage)
+	else:
 		consoleInterface()			
-elif len(sys.argv) > 1:
-	print(helpMessage)
-else:
-	consoleInterface()			
+
+# Wytwarza zadania sudoku o bazie base, ilości podpowiedzi hints. Zadań jest amount. Zapisywane są one w pliku 'NxNsudokusA(B).txt', gdzie N jest bokiem zadania sudoku, A jest ilością podpowiedzi, a B jest ilością zadań.
+# base - baza sudoku
+# hints - ilość podpowiedzi w zadaniach
+# amount - ilość zadań		
+def createPuzzles(base,hints,amount):
+	database = matrix_database.Database(False)
+	s = Sudoku(base)
+	file = open('log.txt','w')
+	file.close()
+	templatesSet = set()
+	for i in range(amount):
+		print('\r test {0} of {1}'.format(i+1,amount),end = '\r')
+		s.generateRandomSolvable(hints)
+		newTemplate = s.getColorsAsTemplate()
+		if len(newTemplate) == math.pow(base,4):
+			templatesSet.add(newTemplate)
+	file  = open('{0}x{0}sudokus{1}({2}).txt'.format(base*base,hints,amount),'w')
+	for t in templatesSet:
+		file.write(t+'\n')
+	file.close()
+	
+if __name__ == '__main__':
+    start()
+		
+
+
+
+		
+	
