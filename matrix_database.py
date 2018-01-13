@@ -31,6 +31,7 @@ class Database:
 		self.Test4 = []
 		self.Test3 = []
 		self.Test2 = []
+		self.LoadedForDemand = []
 		for x in range(4):
 			self.Test4.append([])
 			self.Test3.append([])
@@ -67,6 +68,7 @@ class Database:
 			if index < len(self.Test4[difficulty]):
 				return self.Test4[difficulty][index]
 		return None
+
 	# Zwraca liczbę ilości zadań testowych dla danej bazy i stopnia trudności
 	# n - baza sudoku
 	# difficulty - trudność zadania
@@ -153,3 +155,20 @@ class Database:
 					listsToFill[x].append(Diagram(base,l))
 				else:
 					print("list {} is wrong!".format(l.__str__()))			
+					
+	# Ładuje testy z pliku o podanej nazwie
+	# fileName - nazwa pliku
+	# base - baza sudoku
+	def loadUserTests(self,fileName,base):
+		self.fillEasy(self.LoadedForDemand,fileName,base)
+		
+	# Zwraca ilość testów z pliku użytkownika
+	def getAmountOfUserTests(self):
+		return len(self.LoadedForDemand)
+	
+	# Zwraca zadanie z wcześniej załadowanego pliku użytkownika
+	# index - indeks zadania
+	def getUserTest(self,index):
+		if index<len(self.LoadedForDemand):
+			return self.LoadedForDemand[index]
+		return None

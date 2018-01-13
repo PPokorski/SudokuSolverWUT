@@ -3,8 +3,7 @@ import matrix
 import matrix_database
 
 class TestMatrix(unittest.TestCase):
-	def test_dummy(self):
-		self.assertEqual(0,0)
+	pass
 
 def create_test(n,diagram,solution):
 	def check_solution(self):
@@ -27,31 +26,21 @@ def stringToLine(str):
 			list.append(ord(c) - ord('a') + 10)
 	return list
 	
+def create_battery_of_tests(n):
+	diagramList = []
+	solutionList = []
+	id = 0
+	with open('sudoku_{0}x{0}_solution.csv'.format(n*n),'r') as file:
+		file.readline()
+		for line in file:
+			lines = line.split(',')
+			diagramList = stringToLine(lines[0])
+			solutionList = stringToLine(lines[1])
+			test_method = create_test(n,diagramList,solutionList)
+			test_method.__name__ = "test_method_{0}x{0}_{1}".format(n*n,id)
+			setattr(TestMatrix,test_method.__name__,test_method)
+			id+=1
 if __name__ == '__main__':
-	diagramList2 = []
-	solutionList2 = []
-	diagramList3 = []
-	solutionList3 = []
-	id = 0
-	with open('sudoku_4x4_solution.csv','r') as file:
-		file.readline()
-		for line in file:
-			lines = line.split(',')
-			diagramList2 = stringToLine(lines[0])
-			solutionList2 = stringToLine(lines[1])
-			test_method = create_test(2,diagramList2,solutionList2)
-			test_method.__name__ = "test_method_{0}_{1}".format('4x4',id)
-			setattr(TestMatrix,test_method.__name__,test_method)
-			id+=1
-	id = 0
-	with open('sudoku_9x9_solution.csv','r') as file:
-		file.readline()
-		for line in file:
-			lines = line.split(',')
-			diagramList3 = stringToLine(lines[0])
-			solutionList3 = stringToLine(lines[1])
-			test_method = create_test(3,diagramList3,solutionList3)
-			test_method.__name__ = "test_method_{0}_{1}".format('9x9',id)
-			setattr(TestMatrix,test_method.__name__,test_method)
-			id+=1
+	create_battery_of_tests(2)
+	create_battery_of_tests(3)
 	unittest.main()

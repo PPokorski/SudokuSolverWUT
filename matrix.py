@@ -85,6 +85,7 @@ class Sudoku:
 			if self.matrix[point+i*amountOfPoints] == 1:
 				neighbourColors.add(self.colors[i])
 		return neighbourColors
+		
 	# Sprawdza, czy zadanie sudoku zostało rozwiązane czy nie. Zwraca odpowiednią wartość boolean w obu przypadkach.
 	def isUncolored(self):
 		amountOfPoints = int(len(self.colors))
@@ -470,62 +471,125 @@ def consoleInterface():
 		else:
 			print('unsupported integer')
 
-# Funkcja przeprowadzająca testy. base - baza sudoku, numberOfTests - ilość testów. Testy zostają przeprowadzone, a dane o czasie przeprowadzania testów zostają zwrócone.
+# Funkcja przeprowadzająca testy. base - baza sudoku, numberOfTests - ilość testów. Testy zostają przeprowadzone, a dane o czasie przeprowadzania testów zostają zwrócone. Zapisuje dane do pliku fileName. Możliwe jest zaczerpnięcie z generowanych testów.
 # base - baza sudoku
+# fileName - nazwa pliku, w którym zostaną zapisane wyniki
 # numberOfTests - jeżeli testy nie zostały wczytane z pliku, program wygeneruje testy w podanej liczbie
-def test(base,numberOfTests):
+# selfGenerateTests - decyduje o tym, czy testy zostaną wygenerowane przez algorytm czy nie
+def test(base,fileName,numberOfTests = 0,selfGenerateTests = False):
 	print('loading tests')
 	database = matrix_database.Database()
 	print('loading complete')
 	s = Sudoku(base)
 	file = open('log.txt','w')
 	file.close()
-	results = 'diagram number,solving result,difficulty,time\n'
-	timeResults = ""
-	if base == 3 or base == 2 or base == 4:
-		for dif in range(4):
-			amountOfTests = database.getAmountOfTests(base,dif)
+	with open(fileName,'w') as file:
+		results = 'diagram number,solving result,difficulty,time\n'
+		file.write(results)
+		timeResults = ""
+		if not selfGenerateTests and (base == 3 or base == 2 or base == 4):
+			for dif in range(4):
+				amountOfTests = database.getAmountOfTests(base,dif)
+				timeSum = 0
+				for i in range(amountOfTests):
+					print('\r test {0} of {1} | difficulty {2}     '.format(i+1,amountOfTests,dif),end = '\r')
+					diagram = database.getTest(base,dif,i)
+					startTime = time.perf_counter()
+					if diagram is not None:
+						s.setColorsFromDiagram(diagram)
+						try:
+							result = s.colorGraphNew()
+						except KeyboardInterrupt:
+							result = 'test skipped'
+					endTime = time.perf_counter()
+					timeOfTest = endTime-startTime
+					res = "{0},{1},{2},{3}\n".format(i,result,dif,timeOfTest)
+					print("test {}:".format(base)+res,end="")
+					results += res
+					file.write(res)
+					timeSum+=timeOfTest
+				if amountOfTests != 0:
+					timeResults +="\n Time of all difficulty {2} tests {0}s, average {1}s per test".format(timeSum,(timeSum)/amountOfTests,dif)
+		else:
+			if not selfGenerateTests:
+				print('pre-generated tests couldn\'t be found')
 			timeSum = 0
-			for i in range(amountOfTests):
-				diagram = database.getTest(base,dif,i)
-				#startTime = time.process_time()
-				startTime = time.perf_counter()
-				if diagram is not None:
-					s.setColorsFromDiagram(database.getTest(base,dif,i))
-					result = s.colorGraphNew()
-				#endTime = time.process_time()
-				endTime = time.perf_counter()
+			for i in range(numberOfTests):
+				print('\r test {0} of {1}     '.format(i+1,numberOfTests),end = '\r')
+				s.generateRandomSolvable(base*base)
+				startTime = time.perf_counter()	
+				result = s.colorGraphNew()
+				endTime = time.process_time()
 				timeOfTest = endTime-startTime
-				results += "{0},{1},{2},{3}\n".format(i,result,dif,timeOfTest)
 				timeSum+=timeOfTest
-				print('\r test {0} of {1} | difficulty {2}     '.format(i+1,amountOfTests,dif),end = '\r')
-			if amountOfTests != 0:
-				timeResults +="\n Time of all tests {0}s, average {1}s per test, difficulty {2}".format(timeSum,(timeSum)/amountOfTests,dif)
-	else:
-		startTime = time.process_time()
-		for i in range(numberOfTests):
-			s.generateRandomSolvable(base*base)
-			results += "\n=====(test number({})) ".format(i)+ s.colorGraphNew()
-			print('\r test {0} of {1}     '.format(i+1,numberOfTests),end = '\r')
-		endTime = time.process_time()
-		if numberOfTests!=0:
-			timeResults +="\n\n Time of all tests {0}s, average {1}s per test".format(endTime-startTime,(endTime-startTime)/numberOfTests)
+				res = "{0},{1},{2},{3}\n".format(i,result,0,timeOfTest)
+				results += res
+				file.write(res)
+			if numberOfTests!=0:
+				timeResults +="\n Time of all tests {0}s, average {1}s per test".format(timeSum,(timeSum)/numberOfTests)
 	print()
+	print(timeResults)
 	return results
 
+# Funkcja przeprowadzająca testy na danych dostarczonych przez użytkownika. Testy zostają przeprowadzone, a dane o czasie przeprowadzania testów zostają zwrócone.
+# base - baza sudoku
+# fileName - nazwa pliku, w którym zostaną zapisane wyniki
+# testFileName - nazwa pliku z testami użytkownika
+def userTest(base,fileName,testFileName):
+	print('loading tests')
+	database = matrix_database.Database(False)
+	database.loadUserTests(testFileName,base)
+	print('loading complete')
+	s = Sudoku(base)
+	file = open('log.txt','w')
+	file.close()
+	with open(fileName,'w') as file:
+		results = 'diagram number,solving result,time,colored graph\n'
+		file.write(results)
+		timeResults = ""
+		amountOfTests = database.getAmountOfUserTests()
+		timeSum = 0
+		for i in range(amountOfTests):
+			print('\r test {0} of {1}      '.format(i+1,amountOfTests),end = '\r')
+			diagram = database.getUserTest(i)
+			startTime = time.perf_counter()
+			if diagram is not None:
+				s.setColorsFromDiagram(diagram)
+				try:
+					result = s.colorGraphNew()
+				except KeyboardInterrupt:
+					result = 'test skipped'
+			endTime = time.perf_counter()
+			timeOfTest = endTime-startTime
+			res = "{0},{1},{2},{3}\n".format(i,result,timeOfTest,s.getColorsAsTemplate())
+			print("test {}:".format(base)+res,end="")
+			results += res
+			file.write(res)
+			timeSum+=timeOfTest
+		if amountOfTests != 0:
+			timeResults +="\n Time of all tests {0}s, average {1}s per test".format(timeSum,(timeSum)/amountOfTests)
+	print()
+	print(timeResults)
+	return results
 # Funkcja decydująca o tym, czy uruchomić konsolę użytkownika, czy przeprowadzać testy na podstawie danych z konsoli.
 def start():
-	helpMessage = 'in order to activate the test mode you need to type \'test\' followed by two integers, sudoku base and number of tests respectivly\n'
+	helpMessage = 'in order to activate the test mode you need to type \'test\' followed by two integers, sudoku base. Add number of tests if you want to use generated tests\n'
 	if len(sys.argv) > 2:
 		if sys.argv[1] == 'test' and sys.argv[2].isdigit():
 			base = int(sys.argv[2])
 			numberOfTests = 0
+			selfGenerate = False
 			if len(sys.argv) > 3:
 				numberOfTests = int(sys.argv[3])
-			print('ready to test')
-			file = open('test_Result.csv','w')
-			file.write(test(base,numberOfTests))
-			file.close()
+				if numberOfTests>0:
+					selfGenerate = True
+			test(base,'test_Result_{}.csv'.format(base),numberOfTests,selfGenerate)
+		elif len(sys.argv)>3 and sys.argv[1] == 'test-from-file' and sys.argv[2].isdigit():
+			try:
+				base = int(sys.argv[2])
+				userTest(base,'test_User_Result_{}.csv'.format(base),sys.argv[3])
+			except IOError:
+				print('file couldn\'t be found')
 		else:
 			print(helpMessage)
 			consoleInterface()			
